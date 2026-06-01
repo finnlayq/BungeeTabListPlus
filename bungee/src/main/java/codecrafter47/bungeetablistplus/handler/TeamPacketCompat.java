@@ -23,6 +23,8 @@ import net.md_5.bungee.protocol.packet.Team;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,7 +70,8 @@ final class TeamPacketCompat {
             return;
         }
         try {
-            if (COLOR_ACCESSOR.getRaw(team) == null) {
+            Object rawColor = COLOR_ACCESSOR.getRaw(team);
+            if (rawColor == null || (rawColor instanceof Optional && !((Optional<?>) rawColor).isPresent())) {
                 COLOR_ACCESSOR.set(team, DEFAULT_COLOR);
             }
         } catch (ReflectiveOperationException | RuntimeException ex) {
@@ -137,7 +140,7 @@ final class TeamPacketCompat {
         try {
             Method setter = Team.class.getMethod("setColor", parameterType);
             setter.setAccessible(true);
-            return new MethodAccessor(setter, getter, parameterType);
+            return new MethodAccessor(setter, getter, parameterType, setter.getGenericParameterTypes()[0]);
         } catch (NoSuchMethodException ignored) {
             return null;
         }
@@ -171,6 +174,10 @@ final class TeamPacketCompat {
     }
 
     private static Object fromColorId(int color, Class<?> targetType) {
+        return fromColorId(color, targetType, targetType);
+    }
+
+    private static Object fromColorId(int color, Class<?> targetType, Type genericType) {
         if (targetType == int.class || targetType == Integer.class) {
             return color;
         }
@@ -183,10 +190,20 @@ final class TeamPacketCompat {
         if (targetType == String.class) {
             return toColorName(color);
         }
-        if (targetType == Optional.class) {
-            return Optional.of(color);
+        if (Optional.class.isAssignableFrom(targetType)) {
+            return Optional.of(fromColorId(color, getOptionalValueType(genericType)));
         }
         return color;
+    }
+
+    private static Class<?> getOptionalValueType(Type optionalType) {
+        if (optionalType instanceof ParameterizedType) {
+            Type[] typeArguments = ((ParameterizedType) optionalType).getActualTypeArguments();
+            if (typeArguments.length == 1 && typeArguments[0] instanceof Class<?>) {
+                return (Class<?>) typeArguments[0];
+            }
+        }
+        return Integer.class;
     }
 
     private static int toColorId(String color) {
@@ -434,7 +451,7 @@ final class TeamPacketCompat {
 
     private static void logSetColorWarning(Exception ex) {
         if (SET_COLOR_WARNING_LOGGED.compareAndSet(false, true)) {
-            log(Level.WARNING, "Unable to set BungeeCord Team packet color using the current runtime API. A default tab list team color may be used by BungeeCord.", ex);
+            log(Level.WARNING, "Unable to initialize BungeeCord Team packet color using the current runtime API. Team packets may fail to encode on this BungeeCord version.", ex);
         }
     }
 
@@ -473,16 +490,18 @@ final class TeamPacketCompat {
         private final Method setter;
         private final Method getter;
         private final Class<?> colorType;
+        private final Type genericColorType;
 
-        private MethodAccessor(Method setter, Method getter, Class<?> colorType) {
+        private MethodAccessor(Method setter, Method getter, Class<?> colorType, Type genericColorType) {
             this.setter = setter;
             this.getter = getter;
             this.colorType = colorType;
+            this.genericColorType = genericColorType;
         }
 
         @Override
         public void set(Team team, int color) throws ReflectiveOperationException {
-            setter.invoke(team, fromColorId(color, colorType));
+            setter.invoke(team, fromColorId(color, colorType, genericColorType));
         }
 
         @Override
@@ -503,15 +522,17 @@ final class TeamPacketCompat {
 
         private final Field field;
         private final Method getter;
+        private final Type genericColorType;
 
         private FieldAccessor(Field field, Method getter) {
             this.field = field;
             this.getter = getter;
+            this.genericColorType = field.getGenericType();
         }
 
         @Override
         public void set(Team team, int color) throws ReflectiveOperationException {
-            field.set(team, fromColorId(color, field.getType()));
+            field.set(team, fromColorId(color, field.getType(), genericColorType));
         }
 
         @Override
