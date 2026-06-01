@@ -22,7 +22,10 @@ import net.md_5.bungee.protocol.packet.Team;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -85,6 +88,10 @@ final class TeamPacketCompat {
         if (methodAccessor != null) {
             return methodAccessor;
         }
+        methodAccessor = findMethodAccessor(getter, Optional.class);
+        if (methodAccessor != null) {
+            return methodAccessor;
+        }
         return findFieldAccessor(getter);
     }
 
@@ -102,7 +109,7 @@ final class TeamPacketCompat {
         try {
             Method setter = Team.class.getMethod("setColor", parameterType);
             setter.setAccessible(true);
-            return new MethodAccessor(setter, getter, parameterType);
+            return new MethodAccessor(setter, getter, parameterType, findOptionalValueType(setter.getGenericParameterTypes()[0]));
         } catch (NoSuchMethodException ignored) {
             return null;
         }
@@ -119,6 +126,10 @@ final class TeamPacketCompat {
     }
 
     private static int toColorId(Object color) {
+        if (color instanceof Optional) {
+            Optional<?> optionalColor = (Optional<?>) color;
+            return optionalColor.map(TeamPacketCompat::toColorId).orElse(DEFAULT_COLOR);
+        }
         if (color instanceof Number) {
             return ((Number) color).intValue();
         }
@@ -128,10 +139,16 @@ final class TeamPacketCompat {
         if (color instanceof String) {
             return toColorId((String) color);
         }
+        if (color instanceof Enum<?>) {
+            return toColorId(((Enum<?>) color).name());
+        }
         return DEFAULT_COLOR;
     }
 
     private static Object fromColorId(int color, Class<?> targetType) {
+        if (targetType == Optional.class) {
+            return Optional.of(color);
+        }
         if (targetType == int.class || targetType == Integer.class) {
             return color;
         }
@@ -143,6 +160,9 @@ final class TeamPacketCompat {
         }
         if (targetType == String.class) {
             return toColorName(color);
+        }
+        if (targetType.isEnum()) {
+            return toEnumColor(color, targetType);
         }
         return color;
     }
@@ -341,6 +361,36 @@ final class TeamPacketCompat {
         }
     }
 
+    private static Object optionalFromColorId(int color, Class<?> optionalValueType) {
+        return Optional.of(fromColorId(color, optionalValueType));
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object toEnumColor(int color, Class<?> targetType) {
+        String colorName = toColorName(color).toUpperCase(Locale.ROOT);
+        Class<? extends Enum> enumType = (Class<? extends Enum>) targetType.asSubclass(Enum.class);
+        try {
+            return Enum.valueOf(enumType, colorName);
+        } catch (IllegalArgumentException ignored) {
+            try {
+                return Enum.valueOf(enumType, "RESET");
+            } catch (IllegalArgumentException ignoredAgain) {
+                Object[] constants = targetType.getEnumConstants();
+                return constants.length == 0 ? color : constants[0];
+            }
+        }
+    }
+
+    private static Class<?> findOptionalValueType(Type type) {
+        if (type instanceof ParameterizedType) {
+            Type[] typeArguments = ((ParameterizedType) type).getActualTypeArguments();
+            if (typeArguments.length == 1 && typeArguments[0] instanceof Class<?>) {
+                return (Class<?>) typeArguments[0];
+            }
+        }
+        return Integer.class;
+    }
+
     private static ChatColor toChatColor(int color) {
         switch (color) {
             case 0:
@@ -429,16 +479,22 @@ final class TeamPacketCompat {
         private final Method setter;
         private final Method getter;
         private final Class<?> colorType;
+        private final Class<?> optionalValueType;
 
-        private MethodAccessor(Method setter, Method getter, Class<?> colorType) {
+        private MethodAccessor(Method setter, Method getter, Class<?> colorType, Class<?> optionalValueType) {
             this.setter = setter;
             this.getter = getter;
             this.colorType = colorType;
+            this.optionalValueType = optionalValueType;
         }
 
         @Override
         public void set(Team team, int color) throws ReflectiveOperationException {
-            setter.invoke(team, fromColorId(color, colorType));
+            if (colorType == Optional.class) {
+                setter.invoke(team, optionalFromColorId(color, optionalValueType));
+            } else {
+                setter.invoke(team, fromColorId(color, colorType));
+            }
         }
 
         @Override
@@ -454,15 +510,21 @@ final class TeamPacketCompat {
 
         private final Field field;
         private final Method getter;
+        private final Class<?> optionalValueType;
 
         private FieldAccessor(Field field, Method getter) {
             this.field = field;
             this.getter = getter;
+            this.optionalValueType = findOptionalValueType(field.getGenericType());
         }
 
         @Override
         public void set(Team team, int color) throws ReflectiveOperationException {
-            field.set(team, fromColorId(color, field.getType()));
+            if (field.getType() == Optional.class) {
+                field.set(team, optionalFromColorId(color, optionalValueType));
+            } else {
+                field.set(team, fromColorId(color, field.getType()));
+            }
         }
 
         @Override
