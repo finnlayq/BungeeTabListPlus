@@ -329,7 +329,7 @@ public abstract class AbstractTabOverlayHandler implements PacketHandler, TabOve
                     teamEntry.setFriendlyFire(packet.getFriendlyFire());
                     teamEntry.setNameTagVisibility(packet.getNameTagVisibility());
                     teamEntry.setCollisionRule(packet.getCollisionRule());
-                    teamEntry.setColor(packet.getColor());
+                    teamEntry.setColor(TeamPacketCompat.getColor(packet));
                 }
                 if (packet.getPlayers() != null) {
                     for (String s : packet.getPlayers()) {
@@ -2494,7 +2494,7 @@ public abstract class AbstractTabOverlayHandler implements PacketHandler, TabOve
         team.setSuffix(suffix);
         team.setNameTagVisibility(nameTagVisibility);
         team.setCollisionRule(collisionRule);
-        team.setColor(color);
+        TeamPacketCompat.setColor(team, color);
         team.setFriendlyFire(friendlyFire);
         team.setPlayers(players);
         return team;
@@ -2516,7 +2516,7 @@ public abstract class AbstractTabOverlayHandler implements PacketHandler, TabOve
         team.setSuffix(suffix);
         team.setNameTagVisibility(nameTagVisibility);
         team.setCollisionRule(collisionRule);
-        team.setColor(color);
+        TeamPacketCompat.setColor(team, color);
         team.setFriendlyFire(friendlyFire);
         return team;
     }
