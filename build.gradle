@@ -1,7 +1,8 @@
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
         gradlePluginPortal()
+        jcenter()
     }
     dependencies {
         classpath 'ru.vyarus:gradle-quality-plugin:4.4.0'
@@ -15,6 +16,9 @@ ext {
     adventureVersion = '4.18.0'
     spongeVersion = '7.0.0'
     dataApiVersion = '1.0.2-SNAPSHOT'
+    viaVersion = '4.0.0'
+    geyserApiVersion = '2.9.0-SNAPSHOT'
+    floodgateApiVersion = '2.2.4-SNAPSHOT'
 }
 
 allprojects {
@@ -29,44 +33,74 @@ subprojects {
 
     repositories {
         mavenCentral()
+
         maven {
-            url = 'https://nexus.codecrafter47.dyndns.eu/content/repositories/public/'
+            name = 'ViaVersion'
+            url = uri('https://repo.viaversion.com/everything/')
+            content {
+                includeGroupByRegex "com\\.viaversion(\\..*)?"
+            }
         }
 
         maven {
-            url = 'https://repo.codemc.org/repository/maven-public'
+            name = 'GeyserMC'
+            url = uri('https://repo.opencollab.dev/main/')
+            content {
+                includeGroupByRegex "org\\.geysermc(\\..*)?"
+            }
         }
 
         maven {
-            url = 'https://repo.md-5.net/content/repositories/snapshots/'
+            name = 'GeyserMC Snapshots'
+            url = uri('https://repo.opencollab.dev/maven-snapshots/')
+            content {
+                includeGroupByRegex "org\\.geysermc(\\..*)?"
+            }
         }
 
         maven {
-            url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
+            name = 'CodeCrafter47'
+            url = uri('https://nexus.codecrafter47.de/content/repositories/public/')
         }
 
         maven {
-            url = 'https://papermc.io/repo/repository/maven-snapshots/'
+            name = 'CodeMC'
+            url = uri('https://repo.codemc.io/repository/maven-public/')
         }
 
         maven {
-            url = 'https://repo.papermc.io/repository/maven-public/'
+            name = 'BungeeCord Snapshots'
+            url = uri('https://repo.md-5.net/content/repositories/snapshots/')
         }
 
         maven {
-            url = 'https://repo.spongepowered.org/maven'
+            name = 'Spigot Snapshots'
+            url = uri('https://hub.spigotmc.org/nexus/content/repositories/snapshots/')
         }
 
         maven {
-            url = 'https://jitpack.io'
+            name = 'PaperMC'
+            url = uri('https://repo.papermc.io/repository/maven-public/')
         }
 
         maven {
-            url = 'https://oss.sonatype.org/content/repositories/snapshots'
+            name = 'Sponge'
+            url = uri('https://repo.spongepowered.org/maven')
         }
 
         maven {
-            url = 'https://nexus.prgm.in/repository/maven-public/'
+            name = 'JitPack'
+            url = uri('https://jitpack.io')
+        }
+
+        maven {
+            name = 'Sonatype Snapshots'
+            url = uri('https://oss.sonatype.org/content/repositories/snapshots')
+        }
+
+        maven {
+            name = 'PRGM'
+            url = uri('https://nexus.prgm.in/repository/maven-public/')
         }
     }
 

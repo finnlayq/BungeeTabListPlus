@@ -17,7 +17,6 @@
 
 package codecrafter47.bungeetablistplus.util;
 
-import org.geysermc.api.connection.Connection;
 import org.geysermc.floodgate.api.FloodgateApi;
 import org.geysermc.geyser.api.GeyserApi;
 
@@ -33,7 +32,7 @@ public class GeyserCompat {
 
         // Geyser
         try {
-            Class.forName("org.geysermc.api.connection.Connection");
+            Class.forName("org.geysermc.geyser.api.GeyserApi");
             geyserHook = new Function<UUID, Boolean>() {
                 @Override
                 public Boolean apply(UUID uuid) {
@@ -46,8 +45,7 @@ public class GeyserCompat {
                         if (instance == null) {
                             return false;
                         }
-                        Connection session = instance.connectionByUuid(uuid);
-                        return session != null;
+                        return instance.connectionByUuid(uuid) != null;
                     } catch (Throwable ignored) {
 
                     }
