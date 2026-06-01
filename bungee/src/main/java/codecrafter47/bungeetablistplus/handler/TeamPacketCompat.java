@@ -18,6 +18,7 @@ package codecrafter47.bungeetablistplus.handler;
 
 import codecrafter47.bungeetablistplus.BungeeTabListPlus;
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.packet.Team;
 
 import java.lang.reflect.Field;
@@ -48,10 +49,31 @@ final class TeamPacketCompat {
         } catch (ReflectiveOperationException | RuntimeException ex) {
             logSetColorWarning(ex);
         }
+        ensureColor(team);
     }
 
     static void setDefaultColor(Team team) {
         setColor(team, DEFAULT_COLOR);
+    }
+
+    static void ensureColor(DefinedPacket packet) {
+        if (packet instanceof Team) {
+            ensureColor((Team) packet);
+        }
+    }
+
+    private static void ensureColor(Team team) {
+        if (COLOR_ACCESSOR == null) {
+            logSetColorWarning(null);
+            return;
+        }
+        try {
+            if (COLOR_ACCESSOR.getRaw(team) == null) {
+                COLOR_ACCESSOR.set(team, DEFAULT_COLOR);
+            }
+        } catch (ReflectiveOperationException | RuntimeException ex) {
+            logSetColorWarning(ex);
+        }
     }
 
     static int getColor(Team team) {
@@ -70,6 +92,10 @@ final class TeamPacketCompat {
 
     private static Accessor findColorAccessor() {
         Method getter = findGetter();
+        Accessor fieldAccessor = findFieldAccessor(getter);
+        if (fieldAccessor != null) {
+            return fieldAccessor;
+        }
         Accessor methodAccessor = findMethodAccessor(getter, int.class);
         if (methodAccessor != null) {
             return methodAccessor;
@@ -94,7 +120,7 @@ final class TeamPacketCompat {
         if (methodAccessor != null) {
             return methodAccessor;
         }
-        return findFieldAccessor(getter);
+        return null;
     }
 
     private static Method findGetter() {
@@ -438,6 +464,8 @@ final class TeamPacketCompat {
         void set(Team team, int color) throws ReflectiveOperationException;
 
         Object get(Team team) throws ReflectiveOperationException;
+
+        Object getRaw(Team team) throws ReflectiveOperationException;
     }
 
     private static final class MethodAccessor implements Accessor {
@@ -464,6 +492,11 @@ final class TeamPacketCompat {
             }
             return getter.invoke(team);
         }
+
+        @Override
+        public Object getRaw(Team team) throws ReflectiveOperationException {
+            return get(team);
+        }
     }
 
     private static final class FieldAccessor implements Accessor {
@@ -486,6 +519,11 @@ final class TeamPacketCompat {
             if (getter != null) {
                 return getter.invoke(team);
             }
+            return field.get(team);
+        }
+
+        @Override
+        public Object getRaw(Team team) throws ReflectiveOperationException {
             return field.get(team);
         }
     }

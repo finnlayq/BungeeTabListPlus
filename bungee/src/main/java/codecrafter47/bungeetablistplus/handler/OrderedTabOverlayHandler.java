@@ -150,6 +150,7 @@ public class OrderedTabOverlayHandler implements PacketHandler, TabOverlayHandle
     }
 
     private void sendPacket(DefinedPacket packet) {
+        TeamPacketCompat.ensureColor(packet);
         if (((packet instanceof PlayerListItemUpdate) || (packet instanceof PlayerListItemRemove)) && (player.getPendingConnection().getVersion() < 761)) {
             // error
             if (!logVersionMismatch) {

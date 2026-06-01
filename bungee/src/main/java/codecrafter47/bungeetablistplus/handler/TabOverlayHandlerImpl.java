@@ -44,6 +44,7 @@ public class TabOverlayHandlerImpl extends AbstractTabOverlayHandler {
 
     @Override
     protected void sendPacket(DefinedPacket packet) {
+        TeamPacketCompat.ensureColor(packet);
         if ((packet instanceof PlayerListItem) && (player.getPendingConnection().getVersion() >= 761)) {
             // error
             if (!logVersionMismatch) {
