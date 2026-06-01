@@ -1272,7 +1272,7 @@ public class NewTabOverlayHandler implements PacketHandler, TabOverlayHandler {
         team.setSuffix(suffix);
         team.setNameTagVisibility(nameTagVisibility);
         team.setCollisionRule(collisionRule);
-        team.setColor(color);
+        TeamPacketCompat.setColor(team, color);
         team.setFriendlyFire(friendlyFire);
         team.setPlayers(players);
         return team;
