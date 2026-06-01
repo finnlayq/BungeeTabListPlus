@@ -437,6 +437,7 @@ public abstract class AbstractLegacyTabOverlayHandler implements PacketHandler, 
                         t.setPrefix(Either.left(tabOverlay.text0[index]));
                         t.setDisplayName(Either.left(""));
                         t.setSuffix(Either.left(tabOverlay.text1[index]));
+                        TeamPacketCompat.setDefaultColor(t);
                         t.setPlayers(new String[]{slotID[index]});
 //                        t.setNameTagVisibility(Team.NameTagVisibility.ALWAYS);
 //                        t.setCollisionRule(Team.CollisionRule.ALWAYS);
@@ -476,6 +477,7 @@ public abstract class AbstractLegacyTabOverlayHandler implements PacketHandler, 
                 packet.setPrefix(Either.left(tabOverlay.text0[index]));
                 packet.setDisplayName(Either.left(""));
                 packet.setSuffix(Either.left(tabOverlay.text1[index]));
+                TeamPacketCompat.setDefaultColor(packet);
 //                packet.setNameTagVisibility(Team.NameTagVisibility.ALWAYS);
 //                packet.setCollisionRule(Team.CollisionRule.ALWAYS);
                 sendPacket(packet);

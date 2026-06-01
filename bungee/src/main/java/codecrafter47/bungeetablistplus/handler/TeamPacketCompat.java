@@ -23,6 +23,7 @@ import net.md_5.bungee.protocol.packet.Team;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,6 +48,10 @@ final class TeamPacketCompat {
         } catch (ReflectiveOperationException | RuntimeException ex) {
             logSetColorWarning(ex);
         }
+    }
+
+    static void setDefaultColor(Team team) {
+        setColor(team, DEFAULT_COLOR);
     }
 
     static int getColor(Team team) {
@@ -82,6 +87,10 @@ final class TeamPacketCompat {
             return methodAccessor;
         }
         methodAccessor = findMethodAccessor(getter, String.class);
+        if (methodAccessor != null) {
+            return methodAccessor;
+        }
+        methodAccessor = findMethodAccessor(getter, Optional.class);
         if (methodAccessor != null) {
             return methodAccessor;
         }
@@ -128,6 +137,10 @@ final class TeamPacketCompat {
         if (color instanceof String) {
             return toColorId((String) color);
         }
+        if (color instanceof Optional) {
+            Optional<?> optionalColor = (Optional<?>) color;
+            return optionalColor.isPresent() ? toColorId(optionalColor.get()) : DEFAULT_COLOR;
+        }
         return DEFAULT_COLOR;
     }
 
@@ -143,6 +156,9 @@ final class TeamPacketCompat {
         }
         if (targetType == String.class) {
             return toColorName(color);
+        }
+        if (targetType == Optional.class) {
+            return Optional.of(color);
         }
         return color;
     }
@@ -392,7 +408,7 @@ final class TeamPacketCompat {
 
     private static void logSetColorWarning(Exception ex) {
         if (SET_COLOR_WARNING_LOGGED.compareAndSet(false, true)) {
-            log(Level.WARNING, "Unable to set BungeeCord Team packet color using the current runtime API. Tab list teams will be sent without an explicit color to avoid crashing.", ex);
+            log(Level.WARNING, "Unable to set BungeeCord Team packet color using the current runtime API. A default tab list team color may be used by BungeeCord.", ex);
         }
     }
 
