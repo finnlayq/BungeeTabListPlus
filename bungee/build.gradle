@@ -1,16 +1,7 @@
 
-repositories {
-    maven {
-        url = "https://repo.viaversion.com"
-    }
-    maven {
-        url = "https://repo.opencollab.dev/main/"
-    }
-}
-
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(16))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
@@ -40,9 +31,9 @@ dependencies {
     compileOnly "protocolsupport:ProtocolSupportBungee:1.3.dev"
     compileOnly "com.google.guava:guava:17.0"
     testImplementation "com.google.guava:guava:17.0"
-    compileOnly "com.viaversion:viaversion-api:4.0.0"
-    compileOnly(group: "org.geysermc.geyser", name: "api", version: "2.1.0-SNAPSHOT")
-    compileOnly "org.geysermc.floodgate:api:2.0-SNAPSHOT"
+    compileOnly "com.viaversion:viaversion-api:${rootProject.ext.viaVersion}"
+    compileOnly "org.geysermc.geyser:api:${rootProject.ext.geyserApiVersion}"
+    compileOnly "org.geysermc.floodgate:api:${rootProject.ext.floodgateApiVersion}"
 }
 
 processResources {
@@ -55,4 +46,14 @@ processResources {
     filesMatching("version.properties") {
         expand(project.properties)
     }
+}
+
+tasks.register('shadowJar', Copy) {
+    group = 'build'
+    description = 'Builds the packaged BungeeCord plugin jar.'
+
+    def bootstrapShadowJar = project(':BungeeTabListPlus').tasks.named('shadowJar')
+    dependsOn bootstrapShadowJar
+    from(bootstrapShadowJar.flatMap { it.archiveFile })
+    into(layout.buildDirectory.dir('libs'))
 }

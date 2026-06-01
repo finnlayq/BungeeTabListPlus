@@ -1,13 +1,4 @@
 
-repositories {
-    maven {
-        url = "https://repo.viaversion.com"
-    }
-    maven {
-        url = "https://repo.opencollab.dev/main/"
-    }
-}
-
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
@@ -31,7 +22,6 @@ dependencies {
     testImplementation "com.velocitypowered:velocity-api:${rootProject.ext.velocityVersion}"
     annotationProcessor "com.velocitypowered:velocity-api:${rootProject.ext.velocityVersion}"
     compileOnly "com.velocitypowered:velocity-proxy:${rootProject.ext.velocityVersion}"
-    annotationProcessor "com.velocitypowered:velocity-proxy:${rootProject.ext.velocityVersion}"
     compileOnly "net.kyori:adventure-api:${rootProject.ext.adventureVersion}"
     compileOnly "net.kyori:adventure-nbt:${rootProject.ext.adventureVersion}"
     compileOnly "net.kyori:adventure-text-serializer-legacy:${rootProject.ext.adventureVersion}"
@@ -39,9 +29,9 @@ dependencies {
     compileOnly "com.github.proxiodev.redisbungee:RedisBungee-Velocity:0.10.1"
     compileOnly 'com.google.guava:guava:23.0'
     testImplementation 'com.google.guava:guava:23.0'
-    compileOnly "com.viaversion:viaversion-api:4.0.0"
-    compileOnly group: "org.geysermc.geyser", name: "api", version: "2.1.0-SNAPSHOT"
-    compileOnly "org.geysermc.floodgate:api:2.0-SNAPSHOT"
+    compileOnly "com.viaversion:viaversion-api:${rootProject.ext.viaVersion}"
+    compileOnly "org.geysermc.geyser:api:${rootProject.ext.geyserApiVersion}"
+    compileOnly "org.geysermc.floodgate:api:${rootProject.ext.floodgateApiVersion}"
     compileOnly "io.netty:netty-all:4.1.86.Final"
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
