@@ -51,7 +51,7 @@ final class TeamPacketCompat {
         } catch (ReflectiveOperationException | RuntimeException ex) {
             logSetColorWarning(ex);
         }
-        ensureColor(team);
+        ensureColorInitialized(team);
     }
 
     static void setDefaultColor(Team team) {
@@ -60,11 +60,11 @@ final class TeamPacketCompat {
 
     static void ensureColor(DefinedPacket packet) {
         if (packet instanceof Team) {
-            ensureColor((Team) packet);
+            ensureColorInitialized((Team) packet);
         }
     }
 
-    private static void ensureColor(Team team) {
+    static void ensureColorInitialized(Team team) {
         if (COLOR_ACCESSOR == null) {
             logSetColorWarning(null);
             return;
@@ -178,6 +178,13 @@ final class TeamPacketCompat {
     }
 
     private static Object fromColorId(int color, Class<?> targetType, Type genericType) {
+        if (Optional.class.isAssignableFrom(targetType)) {
+            return Optional.of(fromColorId(color, getOptionalValueType(genericType)));
+        }
+        return fromColorIdScalar(color, targetType);
+    }
+
+    private static Object fromColorIdScalar(int color, Class<?> targetType) {
         if (targetType == int.class || targetType == Integer.class) {
             return color;
         }
@@ -189,9 +196,6 @@ final class TeamPacketCompat {
         }
         if (targetType == String.class) {
             return toColorName(color);
-        }
-        if (Optional.class.isAssignableFrom(targetType)) {
-            return Optional.of(fromColorId(color, getOptionalValueType(genericType)));
         }
         return color;
     }
@@ -532,7 +536,11 @@ final class TeamPacketCompat {
 
         @Override
         public void set(Team team, int color) throws ReflectiveOperationException {
-            field.set(team, fromColorId(color, field.getType(), genericColorType));
+            Object value = fromColorId(color, field.getType(), genericColorType);
+            if (Optional.class.isAssignableFrom(field.getType()) && !(value instanceof Optional)) {
+                value = Optional.of(fromColorId(color, getOptionalValueType(genericColorType)));
+            }
+            field.set(team, value);
         }
 
         @Override
